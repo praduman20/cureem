@@ -1,16 +1,37 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { useUser } from "@clerk/nextjs";
 import { useLiveQuery } from "@electric-sql/pglite-react";
+import { Toaster, toast } from "sonner";
+import { usePGlite } from "@electric-sql/pglite-react";
+import { useEffect } from "react";
 
 function ViewPatients() {
   const { user } = useUser();
-  const patients = useLiveQuery.sql`
+  const db = usePGlite();
+  let patients = useLiveQuery.sql`
     SELECT *
     FROM patients
     WHERE userId = ${user?.id}
     ORDER BY id;
   `;
+
+  async function handleDelete(id) {
+    const isConfirmed = confirm(
+      "Are you sure you want to delete this Patient data?"
+    );
+    if (!isConfirmed) return;
+
+    try {
+      const query = `DELETE FROM patients WHERE id = $1`;
+      await db.query(query, [id]);
+      toast.success("Patient was deleted successfully.");
+    } catch (error) {
+      console.log("Error deleting patient", error);
+      toast.error("Failed to delete selected patient");
+    }
+  }
 
   return (
     <div className="flex-1 p-10 pb-20">
@@ -23,6 +44,7 @@ function ViewPatients() {
       >
         Active Registered Patients - {patients?.rows.length}
       </h1>
+      <Toaster position="top-center" richColors closeButton />
       <ul className="flex flex-col space-y-5">
         {patients?.rows.map((patient) => (
           <li
@@ -67,6 +89,13 @@ function ViewPatients() {
                   {patient.notes}
                 </p>
               )}
+              <Button
+                variant="destructive"
+                className="text-red-600 bg-red-100 hover:bg-red-200 mt-4"
+                onClick={() => handleDelete(patient.id)}
+              >
+                Delete
+              </Button>
             </div>
           </li>
         ))}

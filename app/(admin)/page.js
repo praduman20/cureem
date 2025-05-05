@@ -18,7 +18,7 @@ export default function Home() {
       </h2>
 
       <Link href="/create-patient">
-        <Button className="bg-[#F4A261] hover:opacity-60">
+        <Button className="bg-[#F4A261] hover:opacity-70">
           Ready to register a patient? Let&apos;s begin.
         </Button>
       </Link>

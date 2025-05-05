@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@/lib/utils";
@@ -46,15 +46,14 @@ const formSchema = z.object({
   }),
   phonenumber: z
     .string()
-    .min(10, "Phone number must be at least 10 digits")
-    .regex(/^\d+$/, "Phone number must contain only digits"),
+    .regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
   email: z.string().email("Invalid email address"),
   address: z.string().min(1, "Address is required"),
   age: z
     .string()
     .min(1, "Age is required")
     .refine((val) => Number(val) > 0 && Number(val) < 120, {
-      message: "Enter a valid age",
+      message: "Enter a valid age between 1 and 120",
     }),
   symptons: z
     .string()
@@ -70,6 +69,7 @@ const genders = [
 
 function CreatePatient() {
   const { user } = useUser();
+  const [open, setOpen] = useState(false);
   const db = usePGlite();
 
   const form = useForm({
@@ -115,15 +115,14 @@ function CreatePatient() {
     const queryData = [userId];
     try {
       const data = await db.query(query, formValues);
-      const data2 = await db.query(
-        `SELECT * FROM patients WHERE userId = $1;`,
-        queryData
-      );
-      console.log("@@@ praduman data", JSON.stringify(data2));
       form.reset();
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
       toast.success("Patient was registered successfully.");
     } catch (error) {
-      toast.success("Failed to register patient. Please try again.");
+      toast.error("Failed to register patient. Please try again.");
       console.log("Error in registering patient", error);
     }
   }
@@ -143,7 +142,7 @@ function CreatePatient() {
         >
           Register a new patient
         </h1>
-        <Toaster position="top-center" richColors />
+        <Toaster position="top-center" richColors closeButton />
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
@@ -153,7 +152,7 @@ function CreatePatient() {
                 <FormItem>
                   <FormLabel>First Name*</FormLabel>
                   <FormControl>
-                    <Input type="text" placeholder="First Name" {...field} />
+                    <Input type="text" placeholder="John" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -166,7 +165,7 @@ function CreatePatient() {
                 <FormItem>
                   <FormLabel>Last Name*</FormLabel>
                   <FormControl>
-                    <Input type="text" placeholder="Last Name" {...field} />
+                    <Input type="text" placeholder="Doe" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -192,7 +191,7 @@ function CreatePatient() {
                 <FormItem>
                   <FormLabel>Gender*</FormLabel>
                   <FormControl>
-                    <Popover>
+                    <Popover open={open} onOpenChange={setOpen}>
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
@@ -221,7 +220,11 @@ function CreatePatient() {
                                   value={gender.label}
                                   key={gender.value}
                                   onSelect={() => {
-                                    form.setValue("gender", gender.value);
+                                    form.setValue("gender", gender.value, {
+                                      shouldValidate: true,
+                                      shouldDirty: true,
+                                    });
+                                    setOpen(false);
                                   }}
                                 >
                                   {gender.label}
@@ -254,7 +257,7 @@ function CreatePatient() {
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="Phone Number"
+                      placeholder="Enter a 10 digit Phone Number"
                       {...field}
                     />
                   </FormControl>
@@ -331,7 +334,7 @@ function CreatePatient() {
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Additional notes"
+                      placeholder="Any Additional information"
                       className="resize-none"
                       rows={8}
                     />
@@ -340,7 +343,9 @@ function CreatePatient() {
                 </FormItem>
               )}
             />
-            <Button type="submit">Submit</Button>
+            <Button className="bg-[#F4A261] hover:opacity-70" type="submit">
+              Submit
+            </Button>
           </form>
         </Form>
       </div>

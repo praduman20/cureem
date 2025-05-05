@@ -9,7 +9,7 @@ function Header() {
           <h1 className="text-3xl md:text-7xl italic font-semibold text-[#F4A261] tracking-tight font-serif drop-shadow-sm">
             Cure'em
           </h1>
-          <h2 className="text-xs md:text-sm ">
+          <h2 className="text-xs md:text-sm tracking-wide pl-2">
             Smart, Swift & Seamless Patient Onboarding
           </h2>
         </div>
