@@ -1,6 +1,6 @@
 "use client";
 
-import React, { FormEvent, useState } from "react";
+import React, { useEffect } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,7 @@ import {
 import { useForm } from "react-hook-form";
 import { useUser } from "@clerk/nextjs";
 import { Textarea } from "@/components/ui/textarea";
+import { usePGlite } from "@electric-sql/pglite-react";
 
 const formSchema = z.object({
   firstname: z.string().min(1, "First name is required"),
@@ -68,6 +69,20 @@ const genders = [
 
 function CreatePatient() {
   const { user } = useUser();
+  const db = usePGlite();
+
+  useEffect(() => {
+    const userId = user?.id;
+    const queryData = [userId];
+    async function fetchData() {
+      const data2 = await db.query(
+        `SELECT * FROM patients WHERE userId = $1;`,
+        queryData
+      );
+      console.log("@@@ praduman data", JSON.stringify(data2));
+    }
+    fetchData();
+  }, []);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -85,8 +100,42 @@ function CreatePatient() {
     },
   });
 
-  function onSubmit(values) {
-    console.log(values);
+  async function onSubmit(values) {
+    const userId = user?.id;
+    const query = `
+      INSERT INTO patients (
+        userId, firstname, lastname, dateofbirth, gender,
+        phonenumber, email, address, age, symptons, notes
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+    `;
+
+    const formValues = [
+      userId,
+      values.firstname,
+      values.lastname,
+      values.dateofbirth,
+      values.gender,
+      values.phonenumber,
+      values.email,
+      values.address,
+      values.age,
+      values.symptons,
+      values.notes || "",
+    ];
+
+    const queryData = [userId];
+    try {
+      const data = await db.query(query, formValues);
+      console.log("@@@ praduman", data);
+      const data2 = await db.query(
+        `SELECT * FROM patients WHERE userId = $1;`,
+        queryData
+      );
+      console.log("@@@ praduman data", JSON.stringify(data2));
+    } catch (error) {
+      console.log("@@@ praduman 2", error);
+    }
   }
 
   if (!user) {
