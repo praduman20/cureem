@@ -2,14 +2,21 @@
 
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-import { PGlite } from "@electric-sql/pglite";
 import { live } from "@electric-sql/pglite/live";
 import { PGliteProvider } from "@electric-sql/pglite-react";
+import { PGliteWorker } from "@electric-sql/pglite/worker";
 
-const db = await PGlite.create({
-  extensions: { live },
-  dataDir: "idb://my-pgdata",
-});
+const db = new PGliteWorker(
+  new Worker(new URL("./my-pglite-worker.js", import.meta.url), {
+    type: "module",
+  }),
+  {
+    extensions: {
+      live,
+    },
+    dataDir: "idb://my-pgdata",
+  }
+);
 
 await db.exec(`CREATE TABLE IF NOT EXISTS patients (
   id SERIAL PRIMARY KEY,
